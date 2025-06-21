@@ -1,0 +1,6 @@
+
+MOV 5, R1
+ADD 6, R1
+MOV R1, R3
+MUL R3, 4
+STORE R3, 20
