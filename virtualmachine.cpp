@@ -5,9 +5,9 @@
 using namespace std;
 
 
-void executeADD(char registers []){
-    registers[0]= registers[0] + registers[1];
-     cout << "After ADD R1, R0 : R0 = " << (int) registers[0] << endl;
+ void executeADD(char registers []){
+ registers[0]= registers[0] + registers[1];
+    cout << "After ADD R1, R0 : R0 = " << (int) registers[0] << endl;
 
 }
 
@@ -20,13 +20,10 @@ int main()
     registers[0] = 5;
     cout << "After MOV 5 , R0: R0 =" << (int)registers[0] << endl;
 
- registers[1] = 10;
+   registers[1] = 10;
     cout << "After MOV 10 , R1 : R1 = " << (int)registers[1] << endl;
 
  executeADD (registers); 
-
- registers[0] = registers[0] + registers[1];
-    cout << "After ADD R1, R0: R0 =" <<(int)registers[0] << endl;
 
  registers[0] = registers[0] - 3;
     cout << "After SUB 3, R0: R0 = " <<(int)registers[0] << endl;
