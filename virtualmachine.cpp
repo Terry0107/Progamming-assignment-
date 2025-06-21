@@ -33,5 +33,11 @@ int main()
     registers[0] = registers[0] - 1;
     cout << "After DEC R0 : R0 = " <<(int)registers[0] << endl;
 
+    registers[0] = registers[0] << 1;
+    cout << "After SHL R0 : R0 " << (int)registers[0] << endl; 
+
+    registers[0] = registers [0] >> 1; 
+    cout << "After SHR R0, 1 : R0 =" << (int)registers[0] << endl;
+    
     return 0;
 }
