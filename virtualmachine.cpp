@@ -8,8 +8,13 @@ using namespace std;
  void executeADD(char registers []){
  registers[0]= registers[0] + registers[1];
     cout << "After ADD R1, R0 : R0 = " << (int) registers[0] << endl;
+ }
+   
+ void executeSUB(char registers[] ){
+ registers[0] = registers[0] - 3; 
+    cout << "After SUB 3, R0 : R0 =" << (int) registers[0] << endl; 
+ }
 
-}
 
 
 int main()
@@ -25,9 +30,10 @@ int main()
 
  executeADD (registers); 
 
- registers[0] = registers[0] - 3;
-    cout << "After SUB 3, R0: R0 = " <<(int)registers[0] << endl;
 
+ 
+ executeSUB (registers);
+ 
  registers[0] = registers[0] * 2;
     cout << "After MUL 2 , R0 : R0 = "<<(int)registers[0] << endl;
 
