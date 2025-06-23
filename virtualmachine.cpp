@@ -49,7 +49,9 @@ using namespace std;
  }
 
  void executeSHL(char registers []) {
+    char original_r0 = registers[0];
     registers[0] = registers[0] << 1; 
+
      cout << "After SHL R0, 1 : R0 =" << (int) registers[0] << endl;
 
      ZF = (registers[0] == 0); 
@@ -59,8 +61,9 @@ using namespace std;
      OF = (((original_r0 & 0x40) >>6) != ((registers[0] & 0x80) >>7 ));
      UF = false;
      displayFlags();
+      }
 
-     void executeSHR(char registers []){
+     void executeSHR(char registers[]) {
         char original_r0 = registers[0]; 
         registers[0] = registers[0] >> 1;
          cout << "After SHR R0, 1 : R0 = " << (int) registers[0] << endl; 
@@ -69,7 +72,7 @@ using namespace std;
          CF = ((original_r0 & 0x01 ) !=0);
          OF = false;
          UF = false; 
-         DisplayFlags ();
+         displayFlags();
  }
 
  void executeROL (char registers []) {
@@ -91,7 +94,7 @@ using namespace std;
     unsigned char temp_val_ror = (unsigned char) registers[0]; 
     unsigned char wrapped_bit_ror= temp_val_ror & 1;
     temp_val_ror = temp_val_ror >> 1; 
-    temp_val_ror = temp_val_ror | (wrapped_bit_ ror << 7); 
+    temp_val_ror = temp_val_ror | (wrapped_bit_ror << 7); 
     registers[0] = (char)temp_val_ror;
     cout <<"After ROR R0, 1 : R0 =" << (int)registers[0] << endl; 
     
@@ -103,7 +106,7 @@ using namespace std;
  }
 
 
-int main() {
+int main(){
 
     cout << "Virtual Machine Simulator" << endl;
     char registers[8] = {0};
@@ -119,18 +122,20 @@ int main() {
  executeADD (registers); 
  registers[0] = 120; 
  registers[1] = 20; 
- cout << "\n--- Testing ADD with potential POSITIVE OVERFLOW --- \n"
+ cout << "\n--- Testing ADD with potential POSITIVE OVERFLOW --- \n";
  executeADD (registers); 
  registers[0] = -5;
  registers[1] = 5;
   cout << "\n--- Testing ADD with ZERO result --- \n"; 
  executeADD (registers); 
    registers[0] = -120; 
-   registers[1] = -20
-   cout << "\n--- Testing ADD with potential NEGATIVE OVERFLOW ( UNDERFLOW) ---\n"
+   registers[1] = -20;
+   cout << "\n--- Testing ADD with potential NEGATIVE OVERFLOW ( UNDERFLOW) ---\n";
  executeADD (registers); 
  registers[0] = 15; 
- cout << "\nAfter restting R0 to 15\n" displayFlags();
+ cout << "\nAfter restting R0 to 15\n";
+
+ displayFlags();
  
  executeSUB (registers);
 
@@ -164,10 +169,10 @@ int main() {
  registers[0] = 7;
  cout << "\n--- Testing SHR (R0=7) ---\n";
  executeSHR(registers);
- register[0] = 5; 
+ registers[0] = 5; 
  cout << "\n--- Testing ROL (R0=5) ---\n";
  executeROL(registers);
- register[0] = -128; 
+ registers[0] = -128; 
  cout << "\n--- Testing ROL (R0=-128) ---\n";
  executeROL(registers);
  registers[0] = 10; 
@@ -190,3 +195,4 @@ int main() {
     return 0;
 
 }
+ 
