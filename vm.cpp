@@ -41,7 +41,7 @@ void add(int srcReg, int destReg) {
    int result = R[destReg] + R[srcReg];
    R[destReg] = static_cast<char>(result);
 
-   ////////////// Update flags //////////////
+   // Update flags 
    OF = (result > 127);
    UF = (result < -128);
    ZF = (R[destReg] ==0);
@@ -52,7 +52,7 @@ void sub(int srcReg, int destReg) {
    int result = R[destReg] - R[srcReg];
    R[destReg] = static_cast<char>(result);
 
-   ////////////// Update flags //////////////
+   // Update flags 
    OF = (result > 127);
    UF = (result < -128);
    ZF = (R[destReg] ==0);
@@ -63,7 +63,7 @@ void mul(int srcReg, int destReg) {
    int result = R[destReg] * R[srcReg];
    R[destReg] = static_cast<char>(result);
 
-   ////////////// Update flags //////////////
+   // Update flags 
    OF = (result > 127);
    UF = (result < -128);
    ZF = (R[destReg] ==0);
@@ -77,7 +77,7 @@ void div(int srcReg, int destReg) {
    int result = R[destReg] / R[srcReg];
    R[destReg] = static_cast<char>(result);
 
-   ////////////// Update flags //////////////
+   // Update flags 
    OF = (result > 127);
    UF = (result < -128);
    ZF = (R[destReg] ==0);
@@ -89,7 +89,7 @@ void inc(int destReg) {
    int result = R[destReg] + 1;
    R[destReg] = static_cast<char>(result);
 
-   ///////////// Update flags //////////////
+   // Update flags 
    OF = (result > 127);
    UF = (result < -128);
    ZF = (R[destReg] ==0);
@@ -100,7 +100,7 @@ void dec(int destReg) {
    int result = R[destReg] - 1;
    R[destReg] = static_cast<char>(result);
 
-   ///////////// Update flags //////////////
+   // Update flags 
    OF = (result > 127);
    UF = (result < -128);
    ZF = (R[destReg] ==0);
