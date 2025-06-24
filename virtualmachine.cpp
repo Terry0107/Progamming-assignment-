@@ -132,7 +132,7 @@ using namespace std;
      cout << "After MUL 2 , R0 : R0 =" << (int)registers[0] << endl; 
 
      ZF = (registers[0] ==0); 
-     OF = (result_int > 127 || resutlt_int < -128);
+     OF = (result_int > 127 || result_int < -128);
      UF = (operand1 < 0 && operand2_val > 0 && registers[0] > 0); 
      CF = (((unsigned char )operand1 *(unsigned char)operand2_val) > 255);
     displayFlags();
@@ -150,7 +150,7 @@ using namespace std;
       UF = false; 
       CF = false; 
       displayFlags();
-      return 0; 
+      return; 
     }
     int result_int = (int)operand1 / (int)operand2_val;
     registers[0] = (char)result_int; 
@@ -162,7 +162,34 @@ using namespace std;
       CF = false; 
       displayFlags();
 }
+ void executeINC(char registers[]){
+    char original_r0 = registers[0];
+    int result_int = (int)original_r0 + 1;
+
+    registers[0] = (char)result_int;
+
+     cout << "After INC R0 : R0 =" << (int)registers[0] << endl;
+     ZF = (registers[0]==0);
+     OF = (original_r0 == 127 && registers[0] == -128);
+     UF = false;
+     CF = (original_r0 == (char)255 );
+     displayFlags();
+
+ }
  
+ void executeDEC(char registers[]){
+    char original_r0 = registers[0];
+    int result_int = (int)original_r0 - 1;
+
+    registers[0] = (char)result_int;
+
+    cout << "After DEC R0 : R0 =" << (int)registers[0]<< endl;
+    ZF = (registers[0]==0);
+    OF = (original_r0 == -128 && registers[0] == 127);
+    UF = (original_r0 == -128 && registers[0] == 127);
+    CF = (original_r0 == 0 && registers[0] == (char)255);
+    displayFlags();
+ }
 
 int main(){
     cout << "Virtual Machine Simulator" << endl;
@@ -215,21 +242,54 @@ int main(){
     executeMUL(registers);
 
  registers[0] = -70; 
-    cout << "\n--- Testing MUL (R0= -70, MUL 2)(---\n";
+    cout << "\n--- Testing MUL (R0= -70, MUL 2)---(Negative overflow/underflow)\n";
     executeMUL(registers);
 
  registers[0] = 0; 
-    cout << "\n--- Testing MUL (R0=0, MUL 2)"
+    cout << "\n--- Testing MUL (R0=0, MUL 2)---(Zero result)\n";
+    executeMUL(registers);
+
+ registers[0] =10; 
+   cout << "\n--- Testing DIV (R0=10, DIV 0)---(Divison by zero)\n";
+  executeDIV(registers);
+  char original_r1 = registers[1];
+  registers[1] = 0; 
+  executeDIV(registers);
+ registers[1] = original_r1;
+
     
 
- registers[0] = registers[0] / 3;
-    cout << "After DIV 3 , R0 : R0 = "<<(int)registers[0] << endl;
+ registers[0] = 5; 
+   cout << "\n--- Testing INC (R0=5)---\n";
+    executeINC(registers);
 
- registers[0] = registers[0] + 1;
-    cout << "After INC R0 : R0 = " <<(int)registers[0] << endl;
+ registers[0] = 127; 
+  cout << "\n--- Testing INC (R0=127)---(Positive Overflow)\n";
+   executeINC(registers);
 
- registers[0] = registers[0] - 1;
-    cout << "After DEC R0 : R0 = " <<(int)registers[0] << endl;
+ registers[0] = -1;
+  cout << "\n--- Testing INC (R0=-1)---(Zero Result) \n ";
+   executeINC(registers);
+
+ registers[0] = (char)255;
+  cout << "\n--- Testin INC (R0 =(char) 255) --- (unsgined carry )\n";
+    executeINC(registers);
+
+ registers[0] = 5;
+  cout << "\n--- Testing DEC (R0=5)---\n";
+   executeDEC(registers);
+
+ registers[0] = -128;
+  cout << "\n--- Testing DEC (R0=-128)---(Negative Overflow)\n";
+   executeDEC(registers);
+
+ registers[0] = 1;
+  cout << "\n --- Testing DEC (R0 = 1) --- (Zero Result)\n";
+   executeDEC(registers);
+
+ registers[0] = 0;
+  cout << "\n--- Testing DEC (R0=0)--- (unsigned Carry/Borrow)\n";
+   executeDEC(registers);
 
 
  cout << "\n--- Testing SHL (R0=5) ---\n"; 
