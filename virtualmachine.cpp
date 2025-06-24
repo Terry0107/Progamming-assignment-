@@ -19,8 +19,25 @@ using namespace std;
     cout << "-----------------------\n " << endl; 
 
  }
+ void executeINPUT(char registers[]){
+ char input_char;
+  cin >> input_char;
+  registers[0] = input_char;
+    cout << "After INPUT R0 : R0 =" << (int)registers[0] << "(ASCII value )" << endl;
+    ZF = (registers[0] == 0);
+    OF = false;
+    UF = false;
+    CF = false;
+    displayFlags();
 
 
+ }
+
+ void executeOUT(char registers []) {
+    cout << "After OUT R0 : Displaying R0 value =" << (int) registers[0] << endl;
+
+    displayFlags();
+ }
 
 
  void executeADD(char registers []){
@@ -331,15 +348,18 @@ int main(){
  registers[0] = 1; 
  executeROR(registers); 
 
+ cout << "\n--- Testing INPUT (Enter 'A' For R0) --- \n";
+ executeINPUT(registers);
 
- char input_char; 
-  cout << "Input for R0 (enter a single digit or character) : ?"; 
-  cin >> input_char; 
- registers[0] = input_char; 
-   cout << "After Input R0 : R0 = " << (int) registers[0] << " ( ASCII value)" << endl; 
+ cout << "\n--- Testing OUT (Display R0) ---\n)";
+ executeOUT(registers);
 
-   cout << "After OUT R0 : Displaying R0 value = " << (int) registers[0] << endl; 
+ cout << "\n--- Testing INPUT (Enter Null char (ctrl+@ or value 0) for R0) ---\n";
+ executeINPUT(registers);
 
+ cout << "\n--- Testing OUT (Display R0)---\n";
+ executeOUT(registers);
+ 
     return 0;
 }
  
