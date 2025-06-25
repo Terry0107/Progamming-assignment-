@@ -98,8 +98,9 @@ class SimpleVM {
 
 public:
     SimpleVM() : R(8, 0) {}
-
-       // Load assembly code from file
+    char MEM[64] = {};  // memory initialized to 0
+      
+    // Load assembly code from file
     bool load(const string &filename) {
         ifstream in(filename);
         if (!in) return false;
@@ -122,11 +123,22 @@ public:
 
 
     void dump() {
-        cout << "Registers: ";
-        for (char c : R) cout << (int)c << ' ';
-        cout << "\nFlags: ZF=" << F.ZF << " CF=" << F.CF << " OF=" << F.OF << " UF=" << F.UF << "\n\n";
+    cout << "Registers: ";
+    for (char c : R)
+        printf("%02X ", static_cast<unsigned char>(c));
+    cout << "#\n";
+
+    cout << "Flags    : " << F.ZF << " " << F.CF << " " << F.OF << " " << F.UF << "#\n";
+    cout << "PC       : " << (int)PC << "\n\n";
+
+    cout << "Memory   :\n";
+    for (int i = 0; i < 64; i++) {
+        printf("%02X ", static_cast<unsigned char>(MEM[i]));
+        if ((i + 1) % 8 == 0) cout << "\n";
     }
-        
+    cout << "#\n";
+}
+
     // Handle one line of code
     void execLine(const string &line) {
         stringstream ss(trim(line));
