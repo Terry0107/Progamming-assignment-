@@ -1,77 +1,72 @@
 #include <iostream>
+#include "virtualmachine.h"
 using namespace std;
 
-struct VirtualMachine
+
+void VirtualMachine::initPC() { PC = 0; }
+void VirtualMachine::initFlags() { CF = OF = UF = ZF = false; }
+void VirtualMachine::initRegs()
 {
-    char R[8]; // char (-128..127)
-    char PC = 0;
-    bool CF, OF, UF, ZF;
-    char MEM[64];
-
-    void initPC() { PC = 0; }
-    void initFlags() { CF = OF = UF = ZF = false; }
-    void initRegs()
+    for (char &val : R)
     {
-        for (char &val : R)
-        {
-            val = 0;
-        }
+        val = 0;
     }
+}
 
-    void initMEM()
+void VirtualMachine::initMEM()
+{
+    for (char &val : MEM)
     {
-        for (char &val : MEM)
-        {
-            val = 0;
-        }
+        val = 0;
     }
+}
 
-    void initAll()
-    {
-        initFlags();
-        initPC();
-        initMEM();
-        initPC();
-    }
-    //Part 6.1
-    void Flags()
-    {
-        if (R[0] > 127)
-            OF = true;
-        else
-            OF = false;
+void VirtualMachine::initAll()
+{
+    initFlags();
+    initPC();
+    initMEM();
+    initPC();
+}
+//Part 6.1
+void VirtualMachine::Flags()
+{
+    if (R[0] > 127)
+        OF = true;
+    else
+        OF = false;
 
-        if (R[0] < -128)
-            UF = true;
-        else
-            UF = false;
+    if (R[0] < -128)
+        UF = true;
+    else
+        UF = false;
 
-        if (R[0] == 0)
-            ZF = true;
-        else
-            ZF = false;  
-    }
+    if (R[0] == 0)
+        ZF = true;
+    else
+        ZF = false;  
+}
 
-    void store(int address, char val)
-    {
-        // do bound checking and overflow and zero
-        MEM[address] = val;
-    }
+void VirtualMachine::store(int address, char val)
+{
+    // do bound checking and overflow and zero
+    MEM[address] = val;
+}
 
-    char load(int address)
-    {
-        // checking
-        return MEM[address];
-    }
+char VirtualMachine::load(int address)
+{
+    // checking
+    return MEM[address];
+}
 
-    void input(int index)
-    {
-        int ch;
-        cout << "?";
-        cin >> ch;
-        R[index] = ch;
-    }
-};
+void VirtualMachine::input(int index)
+{
+    int ch;
+    cout << "?";
+    cin >> ch;
+    R[index] = ch;
+}
+
 
 // MOV 28, R0
 // ROL R0, 1
@@ -80,37 +75,37 @@ struct VirtualMachine
 // covert back into decimal and store into R[0]
 
 // a function to execute the assembly program
-void runner()
+void VirtualMachine::runner()
 {
-    VirtualMachine vm;
-    vm.initAll();
-    vm.input(0);//Part 6.1
-    vm.Flags();//Part 6.1
-    cout << "R[0] = " << int(vm.R[0]) << endl;//Part 6.1
-    vm.R[0] = 10;//Part6.2
-    vm.R[0] = vm.R[1];//Part6.2
-    vm.R[3] = vm.load(vm.R[1]); //Part6.2
-
-
-    
-
-    
-
-    
+VirtualMachine vm;
+vm.initAll();
+vm.input(0);//Part 6.1
+vm.Flags();//Part 6.1
+cout << "R[0] = " << int(vm.R[0]) << endl;//Part 6.1
+vm.R[0] = 10;//Part6.2
+vm.R[0] = vm.R[1];//Part6.2
+vm.R[3] = vm.load(vm.R[1]); //Part6.2
 
 
 
-    // loop to read asm file and execute each line
-    // split the line into 3 components
-    // 1. command
-    // 2. operand1
-    // 3. operand2
+
+
+
+
+
+
+
+// loop to read asm file and execute each line
+// split the line into 3 components
+// 1. command
+// 2. operand1
+// 3. operand2
 }
 
-int main()
+int VirtualMachine::main()
 {
-    runner();
-    return 0;
+runner();
+return 0;
 }
 
 // MOV 10, R0   ==> R[0] = 10
