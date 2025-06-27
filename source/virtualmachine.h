@@ -19,6 +19,9 @@ struct VirtualMachine
     void input(int index);
     void runner();
     int main();
+    struct Flags;
+    string trim;
+    class SimpleVM;
 
 
 };

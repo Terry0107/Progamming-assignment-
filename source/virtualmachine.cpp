@@ -3,47 +3,44 @@
 #include <sstream>
 #include <vector>
 #include <string>
+#include "virtualmachine.h"
 using namespace std;
  
-struct VirtualMachine {
-    char R[8]; // char (-128..127)
-    char PC = 0; 
-    bool CF, OF, UF, ZF; 
-    char MEM[64]; 
 
-    void initPC() { PC = 0; }
-    void initFlags() { CF = OF = UF = ZF = false; }
-    void initRegs() { for (char &val : R) val = 0; }
-    void initMEM() { for (char &val : MEM) val = 0; }
 
-    void initAll() {
-        initFlags();
-        initRegs();
-        initMEM();
-        initPC();
-    }
+void VirtualMachine::initPC() { PC = 0; }
+void VirtualMachine::initFlags() { CF = OF = UF = ZF = false; }
+void VirtualMachine::initRegs() { for (char &val : R) val = 0; }
+void VirtualMachine::initMEM() { for (char &val : MEM) val = 0; }
 
-    void Flags() {
-        OF = (R[0] > 127);
-        UF = (R[0] < -128);
-        ZF = (R[0] == 0);
-    }
+void VirtualMachine::initAll() {
+    initFlags();
+    initRegs();
+    initMEM();
+    initPC();
+}
 
-    void store(int address, char val) {
-        MEM[address] = val;   // do bound checking and overflow and zero
-    }
+void VirtualMachine::Flags() {
+    OF = (R[0] > 127);
+    UF = (R[0] < -128);
+    ZF = (R[0] == 0);
+}
 
-    char load(int address) {
-        return MEM[address]; // checking
-    }
+void VirtualMachine::store(int address, char val) {
+    MEM[address] = val;   // do bound checking and overflow and zero
+}
 
-    void input(int index) {
-        int ch;
-        cout << "?";
-        cin >> ch;
-        R[index] = ch;
-    }
-};
+char VirtualMachine::load(int address) {
+    return MEM[address]; // checking
+}
+
+void VirtualMachine::input(int index) {
+    int ch;
+    cout << "?";
+    cin >> ch;
+    R[index] = ch;
+}
+
 // MOV 28, R0
 // ROL R0, 1
 // 0 0 0 1 1 1 0 0  == 28
@@ -52,7 +49,7 @@ struct VirtualMachine {
 
 // a function to execute the assembly program
 
-void runner() {
+void VirtualMachine::runner() {
     VirtualMachine vm;
     vm.initAll();
 
@@ -80,11 +77,11 @@ void runner() {
     // 3. operand2
 }
 
-struct Flags {
+struct VirtualMachine::Flags {
     bool OF = false, UF = false, CF = false, ZF = false;
 };
 // Remove extra spaces from a line
-string trim(const string &s) {
+string VirtualMachine::trim(const string &s) {
     size_t start = s.find_first_not_of(" \t\r\n");
     size_t end = s.find_last_not_of(" \t\r\n");
     return (start == string::npos ? "" : s.substr(start, end - start + 1));
@@ -183,7 +180,8 @@ public:
 };
 
 int main() {
-    runner();
+    VirtualMachine vr;
+    vr.runner();
 
     cout << "\n--- Running Shift/Rotate Instructions ---\n";
     SimpleVM vm;
