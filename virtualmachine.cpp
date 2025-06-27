@@ -216,20 +216,39 @@ public:
             R[r2] = static_cast<char>(result);
 
             // Update Flags
-            F.ZF = (R[r2] == 0);
+                F.ZF = (R[r2] == 0);
+                F.OF = (result > 127);
+                F.UF = (result < -128);
+                F.CF = F.OF || F.UF;
+
+                cout << cmd << " " << reg1 << ", " << reg2 << " = " << (int)R[r2] << endl;
+            } catch (exception &e) {
+                cerr << "Error in " << cmd << ": " << e.what() << endl;
+            }
+        }
+        else if (cmd == "INC" || cmd == "DEC") {
+            string reg;
+            ss >> reg;
+            int r = reg[1] - '0';
+            int result;
+
+            if (cmd == "INC") result = R[r] + 1;
+            else result = R[r] - 1;
+
+            R[r] = static_cast<char>(result);
+
+            // Update Flags
+            F.ZF = (R[r] == 0);
             F.OF = (result > 127);
             F.UF = (result < -128);
             F.CF = F.OF || F.UF;
 
-            cout << cmd << " " << reg1 << ", " << reg2 << " = " << (int)R[r2] << endl;
-        } catch (exception &e) {
-            cerr << "Error in " << cmd << ": " << e.what() << endl;
+            cout << cmd << " " << reg << " = " << (int)R[r] << endl;
         }
-    } 
-    else {
-        cout << "Unsupported command: " << cmd << endl;
+        else {
+            cout << "Unsupported command: " << cmd << endl;
+        }
     }
-}
 
     void shiftOrRotate(stringstream &ss, const string &op) {
         string reg;
@@ -269,7 +288,7 @@ int main() {
     SimpleVM vm;
 
     // Try to load the assembly instructions from a file
-    if (vm.load("prog1.asm")) {
+    if (vm.load("prog2.asm")) {
         cout << "Running instructions from sample1.asm...\n";
         vm.run();  // Run all loaded instructions
     } else {
