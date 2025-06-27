@@ -4,18 +4,25 @@
 #include <vector>
 #include <string>
 using namespace std;
- 
+
+struct Flags {
+    bool CF = false;
+    bool OF = false;
+    bool UF = false;
+    bool ZF = false;
+};
+
 struct VirtualMachine {
-    char R[8]; // char (-128..127)
-    char PC = 0; 
-    bool CF, OF, UF, ZF; 
-    char MEM[64]; 
+    char R[8] = {0}; // char (-128..127)
+    char PC = 0;
+    Flags F;
+    char MEM[64] = {0};
 
     void initPC() { PC = 0; }
-    void initFlags() { CF = OF = UF = ZF = false; }
+    void initFlags() { F.CF = F.OF = F.UF = F.ZF = false; }
     void initRegs() { for (char &val : R) val = 0; }
     void initMEM() { for (char &val : MEM) val = 0; }
-
+    
     void initAll() {
         initFlags();
         initRegs();
@@ -23,10 +30,11 @@ struct VirtualMachine {
         initPC();
     }
 
-    void Flags() {
-        OF = (R[0] > 127);
-        UF = (R[0] < -128);
-        ZF = (R[0] == 0);
+    void updateFlags(char result) {
+        F.ZF = (result == 0);
+        F.OF = (result > 127);
+        F.UF = (result < -128);
+        F.CF = F.OF || F.UF;
     }
 
     void store(int address, char val) {
@@ -43,7 +51,49 @@ struct VirtualMachine {
         cin >> ch;
         R[index] = ch;
     }
+
+// part 6.3
+    void add(int srcReg, int destReg) {
+        int result = R[destReg] + R[srcReg];
+        R[destReg] = static_cast<char>(result);
+        updateFlags(R[destReg]);
+    }
+
+    void sub(int srcReg, int destReg) {
+        int result = R[destReg] - R[srcReg];
+        R[destReg] = static_cast<char>(result);
+        updateFlags(R[destReg]);
+    }
+
+    void mul(int srcReg, int destReg) {
+        int result = R[destReg] * R[srcReg];
+        R[destReg] = static_cast<char>(result);
+        updateFlags(R[destReg]);
+    }
+
+    void div(int srcReg, int destReg) {
+        if (R[srcReg] == 0) {
+            throw runtime_error("Division by zero");
+        }
+        int result = R[destReg] / R[srcReg];
+        R[destReg] = static_cast<char>(result);
+        updateFlags(R[destReg]);
+    }
+
+// part 6.4
+    void inc(int destReg) {
+        int result = R[destReg] + 1;
+        R[destReg] = static_cast<char>(result);
+        updateFlags(R[destReg]);
+    }
+    
+    void dec(int destReg) {
+        int result = R[destReg] - 1;
+        R[destReg] = static_cast<char>(result);
+        updateFlags(R[destReg]);
+    }
 };
+
 // MOV 28, R0
 // ROL R0, 1
 // 0 0 0 1 1 1 0 0  == 28
@@ -57,21 +107,11 @@ void runner() {
     vm.initAll();
 
     vm.input(0); //Part 6.1
-    vm.Flags(); //Part 6.1
     cout << "R[0] = " << int(vm.R[0]) << endl; //Part 6.1
 
     vm.R[0] = 10; //Part6.2
     vm.R[0] = vm.R[1]; //Part6.2
     vm.R[3] = vm.load(vm.R[1]);  //Part6.2
-
-
-
-
-
-
-
-
-
 
     // loop to read asm file and execute each line
     // split the line into 3 components
@@ -80,9 +120,6 @@ void runner() {
     // 3. operand2
 }
 
-struct Flags {
-    bool OF = false, UF = false, CF = false, ZF = false;
-};
 // Remove extra spaces from a line
 string trim(const string &s) {
     size_t start = s.find_first_not_of(" \t\r\n");
