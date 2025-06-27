@@ -1,0 +1,7 @@
+MOV 10, R0
+MOV 20, R1
+ADD R0, R1    ; R1 = 30
+SUB R0, R1    ; R1 = 20
+MUL R0, R1    ; R1 = 200
+MOV 2, R2
+DIV R2, R1    ; R1 = 100
