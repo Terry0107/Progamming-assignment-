@@ -195,21 +195,29 @@ public:
 };
 
 int main() {
-    runner();
-
-    cout << "\n--- Running Shift/Rotate Instructions ---\n";
     SimpleVM vm;
 
-    vector<string> test = {
-        "MOV 28, R0",
-        "SHL R0, 1",
-        "ROL R0, 1"
-    };
+    // Try to load the assembly instructions from a file
+    if (vm.load("sample1.asm")) {
+        cout << "Running instructions from sample1.asm...\n";
+        vm.run();  // Run all loaded instructions
+    } else {
+        cout << "sample1.asm not found, running test instructions...\n";
 
-    for (string line : test) {
-        vm.execLine(line);
+        // Test commands to use if file doesn't exist
+        vector<string> test = {
+            "MOV 28, R0",
+            "SHL R0, 1",
+            "ROL R0, 1"
+        };
+
+        // Run each test line manually
+        for (string line : test) {
+            vm.execLine(line);
+        }
     }
 
+    // Print out everything (registers, flags, memory)
     vm.dump();
     return 0;
 }
