@@ -158,7 +158,6 @@ public:
         }
     }
 
-
     void dump() {
     cout << "Registers: ";
     for (char c : R)
@@ -178,24 +177,59 @@ public:
 
     // Handle one line of code
     void execLine(const string &line) {
-        stringstream ss(trim(line));
-        string cmd;
-        ss >> cmd;
-        for (char &c : cmd) c = toupper(c);
+    stringstream ss(trim(line));
+    string cmd;
+    ss >> cmd;
+    for (char &c : cmd) c = toupper(c);
 
-        if (cmd == "SHL" || cmd == "SHR" || cmd == "ROL" || cmd == "ROR") {
-            shiftOrRotate(ss, cmd);
-        } else if (cmd == "MOV") {
-            int value;
-            string reg;
-            char comma;
-            ss >> value >> comma >> reg;
-            int r = reg[1] - '0';
-            R[r] = value;
-        } else {
-            cout << "Unsupported command: " << cmd << endl;
+    if (cmd == "SHL" || cmd == "SHR" || cmd == "ROL" || cmd == "ROR") {
+        shiftOrRotate(ss, cmd);
+    } 
+    else if (cmd == "MOV") {
+        int value;
+        string reg;
+        char comma;
+        ss >> value >> comma >> reg;
+        int r = reg[1] - '0';
+        R[r] = value;
+    } 
+    else if (cmd == "ADD" || cmd == "SUB" || cmd == "MUL" || cmd == "DIV") {
+        string reg1, reg2;
+        char comma;
+        ss >> reg1 >> comma >> reg2;
+        int r1 = reg1[1] - '0';
+        int r2 = reg2[1] - '0';
+        int result;
+
+        try {
+            if (cmd == "ADD") {
+                result = R[r2] + R[r1];
+            } else if (cmd == "SUB") {
+                result = R[r2] - R[r1];
+            } else if (cmd == "MUL") {
+                result = R[r2] * R[r1];
+            } else if (cmd == "DIV") {
+                if (R[r1] == 0) throw runtime_error("Division by zero");
+                result = R[r2] / R[r1];
+            }
+
+            R[r2] = static_cast<char>(result);
+
+            // Update Flags
+            F.ZF = (R[r2] == 0);
+            F.OF = (result > 127);
+            F.UF = (result < -128);
+            F.CF = F.OF || F.UF;
+
+            cout << cmd << " " << reg1 << ", " << reg2 << " = " << (int)R[r2] << endl;
+        } catch (exception &e) {
+            cerr << "Error in " << cmd << ": " << e.what() << endl;
         }
+    } 
+    else {
+        cout << "Unsupported command: " << cmd << endl;
     }
+}
 
     void shiftOrRotate(stringstream &ss, const string &op) {
         string reg;
@@ -232,21 +266,29 @@ public:
 };
 
 int main() {
-    runner();
-
-    cout << "\n--- Running Shift/Rotate Instructions ---\n";
     SimpleVM vm;
 
-    vector<string> test = {
-        "MOV 28, R0",
-        "SHL R0, 1",
-        "ROL R0, 1"
-    };
+    // Try to load the assembly instructions from a file
+    if (vm.load("prog1.asm")) {
+        cout << "Running instructions from sample1.asm...\n";
+        vm.run();  // Run all loaded instructions
+    } else {
+        cout << "sample1.asm not found, running test instructions...\n";
 
-    for (string line : test) {
-        vm.execLine(line);
+        // Test commands to use if file doesn't exist
+        vector<string> test = {
+            "MOV 28, R0",
+            "SHL R0, 1",
+            "ROL R0, 1"
+        };
+
+        // Run each test line manually
+        for (string line : test) {
+            vm.execLine(line);
+        }
     }
 
+    // Print out everything (registers, flags, memory)
     vm.dump();
     return 0;
 }
