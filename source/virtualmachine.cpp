@@ -122,13 +122,6 @@ void runner() {
     // 3. operand2
 }
 
-// Remove extra spaces from a line
-string trim(const string &s) {
-    size_t start = s.find_first_not_of(" \t\r\n");
-    size_t end = s.find_last_not_of(" \t\r\n");
-    return (start == string::npos ? "" : s.substr(start, end - start + 1));
-}
-
 class SimpleVM {
     vector<char> R;
     Flags F;
@@ -152,37 +145,48 @@ public:
     }
          // Run the whole program
     void run() { 
-      PC = 0;
         PC = 0;
         while (PC < prog.size()) {
             execLine(prog[PC]);
             PC++;
         }
+        PC = 6;
     }
-
 
     void dump() {
-    cout << "Registers: ";
-    for (char c : R)
-        printf("%02X ", static_cast<unsigned char>(c));
-    cout << "#\n";
+        cout << "| Registers: |";
+        for (int i = 0; i < 8; ++i) {
+            cout << setw(3) << (int)R[i] << "  |";
+            if (i == 7) cout << "#";
+        }
+        cout << "\n|---|---|---|---|---|---|---|---|---|\n";
 
-    cout << "Flags    : " << F.ZF << " " << F.CF << " " << F.OF << " " << F.UF << "#\n";
-    cout << "PC       : " << (int)PC << "\n\n";
+        cout << "| Flags    | :   | " << F.ZF << "   | " << F.CF << "   | " << F.OF << "   | " << F.UF << "#    |    |    |    |\n";
 
-    cout << "Memory   :\n";
-    for (int i = 0; i < 64; i++) {
-        printf("%02X ", static_cast<unsigned char>(MEM[i]));
-        if ((i + 1) % 8 == 0) cout << "\n";
+        cout << "| PC       | :   | " << PC << "    |    |    |    |    |    |    |\n\n";
+
+        cout << "Memory :\n\n";
+        for (int i = 0; i < 56; i += 8) {
+            for (int j = 0; j < 8; ++j) {
+                cout << setw(2) << (int)MEM[i+j] << " ";
+            }
+            cout << "\n";
+        }
+        cout << "\n";
     }
-    cout << "#\n";
-}
 
-void updateFlags(char result) {
-    F.ZF = (result == 0);
-    F.OF = (result > 127);
-    F.UF = (result < -128);
-    F.CF = F.OF || F.UF;
+    void updateFlags(char result) {
+        F.ZF = (result == 0);
+        F.OF = (result > 127);
+        F.UF = (result < -128);
+        F.CF = F.OF || F.UF;
+    }
+
+// Remove extra spaces from a line
+    string trim(const string &s) {
+        size_t start = s.find_first_not_of(" \t\r\n");
+        size_t end = s.find_last_not_of(" \t\r\n");
+        return (start == string::npos ? "" : s.substr(start, end - start + 1));
 }
 
 // Utility to remove square brackets
@@ -308,28 +312,33 @@ void execLine(const string &line) {
             updateFlags(R[srcReg]);
 
         } else if (cmd == "ADD" || cmd == "SUB" || cmd == "MUL" || cmd == "DIV") {
-            int src = op1[1] - '0';
-            int dst = op2[1] - '0';
+            int dstReg = op2[1] - '0';
+
             try {
-                if (cmd == "ADD") {
-                    int result = R[dst] + R[src];
-                    R[dst] = static_cast<char>(result);
-                } else if (cmd == "SUB") {
-                    int result = R[dst] - R[src];
-                    R[dst] = static_cast<char>(result);
-                } else if (cmd == "MUL") {
-                    int result = R[dst] * R[src];
-                    R[dst] = static_cast<char>(result);
-                } else if (cmd == "DIV") {
-                    if (R[src] == 0) throw runtime_error("Division by zero");
-                    int result = R[dst] / R[src];
-                    R[dst] = static_cast<char>(result);
-                }
-                updateFlags(R[dst]);
-                cout << cmd << " " << op1 << ",, " << op2 << " = " << (int)R[dst] << endl;
-            } catch (...) {
-                cout << "[ERROR] Invalid arithmetic operation: " << cmd << endl;
+                int srcValue;
+
+                if (op1[0] == 'R') {
+                srcValue = R[op1[1]-'0'];
+            } else {
+                srcValue = stoi(op1);
             }
+
+            if (cmd == "ADD") {
+                R[dstReg] += srcValue;
+            } else if (cmd == "SUB") {
+                R[dstReg] -= srcValue;
+            } else if (cmd == "MUL") {
+                R[dstReg] *= srcValue;
+            } else if (cmd == "DIV") {
+                if (srcValue == 0) throw runtime_error("Division by zero");
+                R[dstReg] /= srcValue;
+            }
+                
+                updateFlags(R[dstReg]);
+                cout << cmd << " " << op1 << ", " << op2 << " = " << (int)R[dstReg] << endl;
+        } catch (exception &e) {
+            cout << "[ERROR] " << e.what() << " in " << cmd << " operation" << endl;
+        }
         }
 
     } else if (cmd == "INPUT") {
@@ -424,25 +433,9 @@ void shiftOrRotate(stringstream &ss, const string &op) {
 int main() {
     runner();
 
-    cout << "\n--- Running Shift/Rotate Instructions ---\n";
-    SimpleVM testVm;
-
-    vector<string> test = {
-        "MOV 28, R0",
-        "SHL R0, 1",
-        "ROL R0, 1"
-    };
-
-    for (const string& line : test) {
-        testVm.execLine(line);
-    }
-
-    testVm.dump();
-
-    // === Phase 2: Load and run actual program ===
-    cout << "\n--- Running Program from prog4.asm ---\n";
+    cout << "\n--- Running Program from prog1.asm ---\n";
     SimpleVM vm;
-    if (!vm.load("prog4.asm")) {
+    if (!vm.load("prog1.asm")) {
         cout << "Failed to load file\n";
         return 1;
     }
