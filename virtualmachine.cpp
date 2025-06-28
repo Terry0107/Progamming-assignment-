@@ -413,16 +413,17 @@ void shiftOrRotate(stringstream &ss, const string &op) {
     ofstream out(filename);
 
     out << "Registers: ";
-    for (int i = 0; i < 8; ++i)
-        out << setw(3) << (int)R[i] << " ";
+    for (int i = 0; i < 8; ++i) {
+        out << setw(2) << setfill('0') << (int)R[i] << " ";
+    }
     out << "#\n";
 
     out << "Flags    : " << F.ZF << " " << F.CF << " " << F.OF << " " << F.UF << "#\n";
     out << "PC       : " << PC << "\n";
 
-    out << "\nMemory   :\n";
+    out << "Memory :\n";
     for (int i = 0; i < 64; ++i) {
-        out << setw(3) << (int)MEM[i] << " ";
+        out << setw(2) << setfill('0') << (int)MEM[i] << " ";
         if ((i + 1) % 8 == 0) out << "\n";
     }
     out << "#\n";
