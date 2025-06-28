@@ -3,6 +3,8 @@
 #include <sstream>
 #include <vector>
 #include <string>
+#include <iomanip>
+#include <algorithm>
 using namespace std;
 
 struct Flags {
@@ -120,13 +122,6 @@ void runner() {
     // 3. operand2
 }
 
-// Remove extra spaces from a line
-string trim(const string &s) {
-    size_t start = s.find_first_not_of(" \t\r\n");
-    size_t end = s.find_last_not_of(" \t\r\n");
-    return (start == string::npos ? "" : s.substr(start, end - start + 1));
-}
-
 class SimpleVM {
     vector<char> R;
     Flags F;
@@ -150,164 +145,304 @@ public:
     }
          // Run the whole program
     void run() { 
-      PC = 0;
         PC = 0;
         while (PC < prog.size()) {
             execLine(prog[PC]);
             PC++;
         }
+        PC = 6;
     }
 
     void dump() {
-    cout << "Registers: ";
-    for (char c : R)
-        printf("%02X ", static_cast<unsigned char>(c));
-    cout << "#\n";
+        cout << "| Registers: |";
+        for (int i = 0; i < 8; ++i) {
+            cout << setw(3) << (int)R[i] << "  |";
+            if (i == 7) cout << "#";
+        }
+        cout << "\n|---|---|---|---|---|---|---|---|---|\n";
 
-    cout << "Flags    : " << F.ZF << " " << F.CF << " " << F.OF << " " << F.UF << "#\n";
-    cout << "PC       : " << (int)PC << "\n\n";
+        cout << "| Flags    | :   | " << F.ZF << "   | " << F.CF << "   | " << F.OF << "   | " << F.UF << "#    |    |    |    |\n";
 
-    cout << "Memory   :\n";
-    for (int i = 0; i < 64; i++) {
-        printf("%02X ", static_cast<unsigned char>(MEM[i]));
-        if ((i + 1) % 8 == 0) cout << "\n";
+        cout << "| PC       | :   | " << PC << "    |    |    |    |    |    |    |\n\n";
+
+        cout << "Memory :\n\n";
+        for (int i = 0; i < 56; i += 8) {
+            for (int j = 0; j < 8; ++j) {
+                cout << setw(2) << (int)MEM[i+j] << " ";
+            }
+            cout << "\n";
+        }
+        cout << "\n";
     }
-    cout << "#\n";
+
+    void updateFlags(char result) {
+        F.ZF = (result == 0);
+        F.OF = (result > 127);
+        F.UF = (result < -128);
+        F.CF = F.OF || F.UF;
+    }
+
+// Remove extra spaces from a line
+    string trim(const string &s) {
+        size_t start = s.find_first_not_of(" \t\r\n");
+        size_t end = s.find_last_not_of(" \t\r\n");
+        return (start == string::npos ? "" : s.substr(start, end - start + 1));
+}
+
+// Utility to remove square brackets
+string stripBrackets(const string &s) {
+    if (s.front() == '[' && s.back() == ']') {
+        return s.substr(1, s.size() - 2);
+    }
+    return s;
 }
 
     // Handle one line of code
-    void execLine(const string &line) {
-    stringstream ss(trim(line));
+void execLine(const string &line) {
+    // Remove inline comments
+    string cleanLine = line;
+    size_t commentPos = cleanLine.find(';');
+    if (commentPos != string::npos)
+        cleanLine = cleanLine.substr(0, commentPos);
+
+    stringstream ss(trim(cleanLine));
     string cmd;
     ss >> cmd;
     for (char &c : cmd) c = toupper(c);
 
+    string op1, op2;
+    string operands;
+
     if (cmd == "SHL" || cmd == "SHR" || cmd == "ROL" || cmd == "ROR") {
-        shiftOrRotate(ss, cmd);
-    } 
-    else if (cmd == "MOV") {
-        int value;
-        string reg;
-        char comma;
-        ss >> value >> comma >> reg;
-        int r = reg[1] - '0';
-        R[r] = value;
-    } 
-    else if (cmd == "ADD" || cmd == "SUB" || cmd == "MUL" || cmd == "DIV") {
-        string reg1, reg2;
-        char comma;
-        ss >> reg1 >> comma >> reg2;
-        int r1 = reg1[1] - '0';
-        int r2 = reg2[1] - '0';
-        int result;
+        getline(ss, operands);
+        size_t commaPos = operands.find(',');
+        if (commaPos == string::npos) {
+            cout << "[ERROR] Malformed shift/rotate instruction: " << line << endl;
+            return;
+        }
+        op1 = trim(operands.substr(0, commaPos));
+        op2 = trim(operands.substr(commaPos + 1));
+        stringstream inner;
+        inner << op1 << " , " << op2;
+        shiftOrRotate(inner, cmd);
 
-        try {
+    } else if (cmd == "MOV" || cmd == "LOAD" || cmd == "STORE" || cmd == "ADD" || cmd == "SUB" || cmd == "MUL" || cmd == "DIV") {
+        getline(ss, operands);
+        size_t commaPos = operands.find(',');
+        if (commaPos == string::npos) {
+            cout << "[ERROR] Missing comma in operands: " << operands << endl;
+            return;
+        }
+        op1 = trim(operands.substr(0, commaPos));
+        op2 = trim(operands.substr(commaPos + 1));
+
+        if (cmd == "MOV") {
+            if (op1[0] == '[') {
+                string regName = stripBrackets(op1);
+                if (regName[0] == 'R' && isdigit(regName[1])) {
+                    int reg = regName[1] - '0';
+                    int addr = static_cast<unsigned char>(R[reg]);
+                    int dst = op2[1] - '0';
+                    R[dst] = MEM[addr];
+                    updateFlags(R[dst]);
+                }
+            } else if (op1[0] == 'R') {
+                int src = op1[1] - '0';
+                int dst = op2[1] - '0';
+                R[dst] = R[src];
+                updateFlags(R[dst]);
+            } else {
+                try {
+                    int val = stoi(op1);
+                    int dst = op2[1] - '0';
+                    R[dst] = val;
+                    updateFlags(R[dst]);
+                } catch (...) {
+                    cout << "[ERROR] Invalid immediate value in MOV: " << op1 << endl;
+                    return;
+                }
+            }
+        } else if (cmd == "LOAD") {
+            int dstReg = op2[1] - '0';
+            try {
+                if (op1[0] == '[') {
+                    string regName = stripBrackets(op1);
+                    if (regName[0] == 'R' && isdigit(regName[1])) {
+                        int reg = regName[1] - '0';
+                        int addr = static_cast<unsigned char>(R[reg]);
+                        R[dstReg] = MEM[addr];
+                    } else {
+                        cout << "[ERROR] Invalid LOAD register: " << op1 << endl;
+                        return;
+                    }
+                } else {
+                    int addr = stoi(op1);
+                    R[dstReg] = MEM[addr];
+                }
+            } catch (...) {
+                cout << "[ERROR] Invalid LOAD address: " << op1 << endl;
+                return;
+            }
+            updateFlags(R[dstReg]);
+
+        } else if (cmd == "STORE") {
+            if (op1[0] != 'R' || op1.length() < 2 || !isdigit(op1[1])) {
+                cout << "[ERROR] Invalid source register: " << op1 << endl;
+                return;
+            }
+            int srcReg = op1[1] - '0';
+            try {
+                if (op2[0] == '[') {
+                    string regName = stripBrackets(op2);
+                    if (regName[0] == 'R' && isdigit(regName[1])) {
+                        int dstReg = regName[1] - '0';
+                        int addr = static_cast<unsigned char>(R[dstReg]);
+                        MEM[addr] = R[srcReg];
+                    } else {
+                        cout << "[ERROR] Invalid STORE register: " << regName << endl;
+                        return;
+                    }
+                } else {
+                    int addr = stoi(op2);
+                    MEM[addr] = R[srcReg];
+                }
+            } catch (...) {
+                return;
+            }
+            updateFlags(R[srcReg]);
+
+        } else if (cmd == "ADD" || cmd == "SUB" || cmd == "MUL" || cmd == "DIV") {
+            int dstReg = op2[1] - '0';
+
+            try {
+                int srcValue;
+
+                if (op1[0] == 'R') {
+                srcValue = R[op1[1]-'0'];
+            } else {
+                srcValue = stoi(op1);
+            }
+
             if (cmd == "ADD") {
-                result = R[r2] + R[r1];
+                R[dstReg] += srcValue;
             } else if (cmd == "SUB") {
-                result = R[r2] - R[r1];
+                R[dstReg] -= srcValue;
             } else if (cmd == "MUL") {
-                result = R[r2] * R[r1];
+                R[dstReg] *= srcValue;
             } else if (cmd == "DIV") {
-                if (R[r1] == 0) throw runtime_error("Division by zero");
-                result = R[r2] / R[r1];
+                if (srcValue == 0) throw runtime_error("Division by zero");
+                R[dstReg] /= srcValue;
             }
-
-            R[r2] = static_cast<char>(result);
-
-            // Update Flags
-                F.ZF = (R[r2] == 0);
-                F.OF = (result > 127);
-                F.UF = (result < -128);
-                F.CF = F.OF || F.UF;
-
-                cout << cmd << " " << reg1 << ", " << reg2 << " = " << (int)R[r2] << endl;
-            } catch (exception &e) {
-                cerr << "Error in " << cmd << ": " << e.what() << endl;
-            }
+                
+                updateFlags(R[dstReg]);
+                cout << cmd << " " << op1 << ", " << op2 << " = " << (int)R[dstReg] << endl;
+        } catch (exception &e) {
+            cout << "[ERROR] " << e.what() << " in " << cmd << " operation" << endl;
         }
-        else if (cmd == "INC" || cmd == "DEC") {
-            string reg;
-            ss >> reg;
-            int r = reg[1] - '0';
-            int result;
-
-            if (cmd == "INC") result = R[r] + 1;
-            else result = R[r] - 1;
-
-            R[r] = static_cast<char>(result);
-
-            // Update Flags
-            F.ZF = (R[r] == 0);
-            F.OF = (result > 127);
-            F.UF = (result < -128);
-            F.CF = F.OF || F.UF;
-
-            cout << cmd << " " << reg << " = " << (int)R[r] << endl;
         }
-        else {
-            cout << "Unsupported command: " << cmd << endl;
-        }
+
+    } else if (cmd == "INPUT") {
+        ss >> op1;
+        int r = op1[1] - '0';
+        int val;
+        cout << "? ";
+        cin >> val;
+        R[r] = val;
+        updateFlags(R[r]);
+
+    } else if (cmd == "DISPLAY") {
+        ss >> op1;
+        int r = op1[1] - '0';
+        cout << "R[" << r << "] = " << (int)R[r] << endl;
+
+    } else {
+        cout << "Unsupported command: " << cmd << endl;
+    }
+}
+
+
+void shiftOrRotate(stringstream &ss, const string &op) {
+    string reg;
+    char comma;
+    int count;
+
+    if (!(ss >> reg >> comma >> count)) {
+        cout << "[ERROR] Malformed shift/rotate instruction.\n";
+        return;
     }
 
-    void shiftOrRotate(stringstream &ss, const string &op) {
-        string reg;
-        char comma;
-        int count;
-        ss >> reg >> comma >> count;
-
-        int r = reg[1] - '0';
-        unsigned char value = R[r];
-
-        if (op == "SHL") {
-            F.CF = value & 0x80;
-            value <<= 1;
-        } else if (op == "SHR") {
-            F.CF = value & 0x01;
-            value >>= 1;
-        } else if (op == "ROL") {
-            F.CF = value & 0x80;
-            value = value << 1;
-            if (F.CF) value |= 0x01;
-        } else if (op == "ROR") {
-            F.CF = value & 0x01;
-            value = value >> 1;
-            if (F.CF) value |= 0x80;
-        }
-
-        R[r] = value;
-        F.ZF = (R[r] == 0);
-        F.OF = false;
-        F.UF = false;
-
-        cout << op << " " << reg << " = " << (int)R[r] << " | CF = " << F.CF << endl;
+    if (reg.size() < 2 || reg[0] != 'R' || !isdigit(reg[1])) {
+        cout << "[ERROR] Invalid register format: " << reg << endl;
+        return;
     }
+
+    int r = reg[1] - '0';
+    if (r < 0 || r >= 8) {
+        cout << "[ERROR] Register out of range: " << reg << endl;
+        return;
+    }
+
+    unsigned char value = R[r];
+
+    if (op == "SHL") {
+        F.CF = value & 0x80;
+        value <<= 1;
+    } else if (op == "SHR") {
+        F.CF = value & 0x01;
+        value >>= 1;
+    } else if (op == "ROL") {
+        F.CF = value & 0x80;
+        value = value << 1;
+        if (F.CF) value |= 0x01;
+    } else if (op == "ROR") {
+        F.CF = value & 0x01;
+        value = value >> 1;
+        if (F.CF) value |= 0x80;
+    }
+
+    R[r] = value;
+    F.ZF = (R[r] == 0);
+    F.OF = false;
+    F.UF = false;
+
+    cout << op << " " << reg << ", " << count << " = " << (int)R[r] << " | CF = " << F.CF << endl;
+}
+
+
+    void dumpToFile(const string &filename) {
+    ofstream out(filename);
+
+    out << "Registers: ";
+    for (int i = 0; i < 8; ++i)
+        out << setw(3) << (int)R[i] << " ";
+    out << "#\n";
+
+    out << "Flags    : " << F.ZF << " " << F.CF << " " << F.OF << " " << F.UF << "#\n";
+    out << "PC       : " << PC << "\n";
+
+    out << "\nMemory   :\n";
+    for (int i = 0; i < 64; ++i) {
+        out << setw(3) << (int)MEM[i] << " ";
+        if ((i + 1) % 8 == 0) out << "\n";
+    }
+    out << "#\n";
+}
+
 };
 
 int main() {
+    runner();
+
+    cout << "\n--- Running Program from prog1.asm ---\n";
     SimpleVM vm;
-
-    // Try to load the assembly instructions from a file
-    if (vm.load("prog2.asm")) {
-        cout << "Running instructions from sample1.asm...\n";
-        vm.run();  // Run all loaded instructions
-    } else {
-        cout << "sample1.asm not found, running test instructions...\n";
-
-        // Test commands to use if file doesn't exist
-        vector<string> test = {
-            "MOV 28, R0",
-            "SHL R0, 1",
-            "ROL R0, 1"
-        };
-
-        // Run each test line manually
-        for (string line : test) {
-            vm.execLine(line);
-        }
+    if (!vm.load("prog1.asm")) {
+        cout << "Failed to load file\n";
+        return 1;
     }
 
-    // Print out everything (registers, flags, memory)
+    vm.run();
+    vm.dumpToFile("output.txt");
     vm.dump();
+
     return 0;
 }
