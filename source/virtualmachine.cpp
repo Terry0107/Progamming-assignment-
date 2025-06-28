@@ -341,6 +341,20 @@ void execLine(const string &line) {
         }
         }
 
+        } else if (cmd == "INC" || cmd == "DEC") {
+            ss >> op1;
+            if (op1[0] != 'R' || !isdigit(op1[1])) {
+                cout << "[ERROR] Invalid register in " << cmd << ": " << op1 << endl;
+                return;
+            }
+            int reg = op1[1] - '0';
+            if (cmd == "INC") {
+                R[reg]++;
+            } else {
+               R[reg]--;
+            }
+            updateFlags(R[reg]);
+
     } else if (cmd == "INPUT") {
         ss >> op1;
         int r = op1[1] - '0';
@@ -436,7 +450,7 @@ int main() {
 
     cout << "\n--- Running Program from prog1.asm ---\n";
     SimpleVM vm;
-    if (!vm.load("prog1.asm")) {
+    if (!vm.load("prog2.asm")) {
         cout << "Failed to load file\n";
         return 1;
     }
