@@ -405,7 +405,7 @@ int main() {
 
     cout << "\n--- Running Program from prog1.asm ---\n";
     SimpleVM simpleVM;
-    if (!simpleVM.load("prog1.asm")) {
+    if (!simpleVM.load("prog2.asm")) {
         cout << "Failed to load file\n";
         return 1;
     }
