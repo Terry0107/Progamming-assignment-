@@ -8,94 +8,55 @@
 #include <algorithm>
 using namespace std;
 
-struct Flags {
-    bool CF = false;
-    bool OF = false;
-    bool UF = false;
-    bool ZF = false;
-};
-
-struct VirtualMachine {
-    char R[8] = {0}; // char (-128..127)
-    char PC = 0;
-    Flags F;
-    char MEM[64] = {0};
-
-    void initPC() { PC = 0; }
-    void initFlags() { F.CF = F.OF = F.UF = F.ZF = false; }
-    void initRegs() { for (char &val : R) val = 0; }
-    void initMEM() { for (char &val : MEM) val = 0; }
-    
-    void initAll() {
-        initFlags();
-        initRegs();
-        initMEM();
-        initPC();
-    }
-
-    void updateFlags(char result) {
-        F.ZF = (result == 0);
-        F.OF = (result > 127);
-        F.UF = (result < -128);
-        F.CF = F.OF || F.UF;
-    }
-
-    void store(int address, char val) {
-        MEM[address] = val;   // do bound checking and overflow and zero
-    }
-
-    char load(int address) {
-        return MEM[address]; // checking
-    }
-
-    void input(int index) {
-        int ch;
-        cout << "?";
-        cin >> ch;
-        R[index] = ch;
-    }
-
-// part 6.3
-    void add(int srcReg, int destReg) {
-        int result = R[destReg] + R[srcReg];
-        R[destReg] = static_cast<char>(result);
-        updateFlags(R[destReg]);
-    }
-
-    void sub(int srcReg, int destReg) {
-        int result = R[destReg] - R[srcReg];
-        R[destReg] = static_cast<char>(result);
-        updateFlags(R[destReg]);
-    }
-
-    void mul(int srcReg, int destReg) {
-        int result = R[destReg] * R[srcReg];
-        R[destReg] = static_cast<char>(result);
-        updateFlags(R[destReg]);
-    }
-
-    void div(int srcReg, int destReg) {
-        if (R[srcReg] == 0) {
-            throw runtime_error("Division by zero");
-        }
-        int result = R[destReg] / R[srcReg];
-        R[destReg] = static_cast<char>(result);
-        updateFlags(R[destReg]);
-    }
-
-// part 6.4
-    void inc(int destReg) {
-        int result = R[destReg] + 1;
-        R[destReg] = static_cast<char>(result);
-        updateFlags(R[destReg]);
-    }
-    
-    void dec(int destReg) {
-        int result = R[destReg] - 1;
-        R[destReg] = static_cast<char>(result);
-        updateFlags(R[destReg]);
-    }
-};
+void VirtualMachine::initPC() { PC = 0; }
+void VirtualMachine::initFlags() { F.CF = F.OF = F.UF = F.ZF = false; }
+void VirtualMachine::initRegs() { for (char &val : R) val = 0; }
+void VirtualMachine::initMEM() { for (char &val : MEM) val = 0; }
+void VirtualMachine::initAll() {
+    initFlags(); initRegs(); initMEM(); initPC();
+}
+void VirtualMachine::updateFlags(char result) {
+    F.ZF = (result == 0);
+    F.OF = (result > 127);
+    F.UF = (result < -128);
+    F.CF = F.OF || F.UF;
+}
+void VirtualMachine::store(int address, char val) { MEM[address] = val; }
+char VirtualMachine::load(int address) { return MEM[address]; }
+void VirtualMachine::input(int index) {
+    int ch; cout << "?"; cin >> ch; R[index] = ch;
+}
+void VirtualMachine::add(int srcReg, int destReg) {
+    int result = R[destReg] + R[srcReg];
+    R[destReg] = static_cast<char>(result);
+    updateFlags(R[destReg]);
+}
+void VirtualMachine::sub(int srcReg, int destReg) {
+    int result = R[destReg] - R[srcReg];
+    R[destReg] = static_cast<char>(result);
+    updateFlags(R[destReg]);
+}
+void VirtualMachine::mul(int srcReg, int destReg) {
+    int result = R[destReg] * R[srcReg];
+    R[destReg] = static_cast<char>(result);
+    updateFlags(R[destReg]);
+}
+void VirtualMachine::div(int srcReg, int destReg) {
+    if (R[srcReg] == 0) throw runtime_error("Division by zero");
+    int result = R[destReg] / R[srcReg];
+    R[destReg] = static_cast<char>(result);
+    updateFlags(R[destReg]);
+}
+void VirtualMachine::inc(int destReg) {
+    int result = R[destReg] + 1;
+    R[destReg] = static_cast<char>(result);
+    updateFlags(R[destReg]);
+}
+void VirtualMachine::dec(int destReg) {
+    int result = R[destReg] - 1;
+    R[destReg] = static_cast<char>(result);
+    updateFlags(R[destReg]);
+}
 
 // MOV 28, R0
 // ROL R0, 1
@@ -123,38 +84,30 @@ void runner() {
     // 3. operand2
 }
 
-class SimpleVM {
-    vector<char> R;
-    Flags F;
-    vector<string> prog;
-    size_t PC = 0;
+SimpleVM::SimpleVM() : R(8, 0) {}
 
-public:
-    SimpleVM() : R(8, 0) {}
-    char MEM[64] = {};  // memory initialized to 0
-      
-    // Load assembly code from file
-    bool load(const string &filename) {
-        ifstream in(filename);
-        if (!in) return false;
-        string line;
-        while (getline(in, line)) {
-            line = trim(line);
-            if (!line.empty()) prog.push_back(line);
-        }
-        return true;
-    }
-         // Run the whole program
-    void run() { 
-        PC = 0;
-        while (PC < prog.size()) {
-            execLine(prog[PC]);
-            PC++;
-        }
-        PC = 6;
+bool SimpleVM::load(const std::string &filename) {
+    std::ifstream in(filename);
+    if (!in) return false;
+
+    std::string line;
+    while (std::getline(in, line)) {
+        line = trim(line);
+        if (!line.empty()) prog.push_back(line);
     }
 
-    void dump() {
+    return true;
+}
+
+
+void SimpleVM::run() {
+    PC = 0;
+    while (PC < prog.size()) {
+        execLine(prog[PC]);
+        PC++;
+    }
+}
+    void SimpleVM::dump() {
         cout << "| Registers: |";
         for (int i = 0; i < 8; ++i) {
             cout << setw(3) << (int)R[i] << "  |";
@@ -176,7 +129,7 @@ public:
         cout << "\n";
     }
 
-    void updateFlags(char result) {
+    void SimpleVM::updateFlags(char result) {
         F.ZF = (result == 0);
         F.OF = (result > 127);
         F.UF = (result < -128);
@@ -184,14 +137,14 @@ public:
     }
 
 // Remove extra spaces from a line
-    string trim(const string &s) {
+    string SimpleVM::trim(const string &s) {
         size_t start = s.find_first_not_of(" \t\r\n");
         size_t end = s.find_last_not_of(" \t\r\n");
         return (start == string::npos ? "" : s.substr(start, end - start + 1));
 }
 
 // Utility to remove square brackets
-string stripBrackets(const string &s) {
+string SimpleVM::stripBrackets(const string &s) {
     if (s.front() == '[' && s.back() == ']') {
         return s.substr(1, s.size() - 2);
     }
@@ -199,7 +152,7 @@ string stripBrackets(const string &s) {
 }
 
     // Handle one line of code
-void execLine(const string &line) {
+void SimpleVM::execLine(const string &line) {
     // Remove inline comments
     string cleanLine = line;
     size_t commentPos = cleanLine.find(';');
@@ -376,7 +329,7 @@ void execLine(const string &line) {
 }
 
 
-void shiftOrRotate(stringstream &ss, const string &op) {
+void SimpleVM::shiftOrRotate(stringstream &ss, const string &op) {
     string reg;
     char comma;
     int count;
@@ -424,7 +377,7 @@ void shiftOrRotate(stringstream &ss, const string &op) {
 }
 
 
-    void dumpToFile(const string &filename) {
+    void SimpleVM::dumpToFile(const string &filename) {
     ofstream out(filename);
 
     out << "Registers: ";
@@ -442,23 +395,24 @@ void shiftOrRotate(stringstream &ss, const string &op) {
         if ((i + 1) % 8 == 0) out << "\n";
     }
     out << "#\n";
-}
-
 };
 
 int main() {
-    runner();
+    VirtualMachine vm;
+    vm.initAll();
+    vm.input(0);
+    cout << "R[0] = " << (int)vm.R[0] << endl;
 
     cout << "\n--- Running Program from prog1.asm ---\n";
-    SimpleVM vm;
-    if (!vm.load("prog1.asm")) {
+    SimpleVM simpleVM;
+    if (!simpleVM.load("prog1.asm")) {
         cout << "Failed to load file\n";
         return 1;
     }
 
-    vm.run();
-    vm.dumpToFile("output.txt");
-    vm.dump();
+    simpleVM.run();
+    simpleVM.dumpToFile("output.txt");
+    simpleVM.dump();
 
     return 0;
 }
